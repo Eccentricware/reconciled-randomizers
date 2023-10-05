@@ -5,7 +5,7 @@ export default function Home() {
   return (
     <main className={styles.main}>
       <Image
-        src="/mtg-sg.jpg"
+        src="/prismatic/mtg-sg.jpg"
         alt="MTG Logo"
         width={1200}
         height={700}

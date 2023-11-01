@@ -1,5 +1,6 @@
 'use client';
 
+import FavorEditMode from '@/components/ultimate/FavorEditMode';
 import { ChangeEvent, useState } from 'react';
 
 export default function Home() {
@@ -11,15 +12,18 @@ export default function Home() {
 
   return (
     <main>
-      {mode === 1 && <h1>Single</h1>}
-      {mode === 3 && <h1>3-Person Squad Strike</h1>}
-      {mode === 5 && <h1>5-Person Squad Strike</h1>}
-      {mode === 0 && <h1>Custom</h1>}
-      {mode === -1 && <h1>Favor Editing</h1>}
+      { mode === 1  && <h1>Single</h1> }
+      { mode === 3  && <h1>3-Person Squad Strike</h1> }
+      { mode === 5  && <h1>5-Person Squad Strike</h1> }
+      { mode === 0  && <h1>Custom</h1> }
+      { mode === -1 && <FavorEditMode /> }
 
-      <select value={mode} onChange={(e: ChangeEvent<HTMLSelectElement>) => {
-        handleModeChange(Number(e.target.value))
-      }}>
+      <select
+        value={mode}
+        onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+          handleModeChange(Number(e.target.value))
+        }}
+      >
         <option value={1}>Single</option>
         <option value={3}>3 Person Squad Strike</option>
         <option value={5}>5 Person Squad Strike</option>

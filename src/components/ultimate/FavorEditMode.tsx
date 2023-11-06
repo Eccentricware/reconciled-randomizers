@@ -6,13 +6,22 @@ const FavorEditMode: FC = () => {
   const ultimateRequestService = new UltimateRequestService()
   const [roster, setRoster] = useState<any[] | undefined>(undefined);
 
-  const { data } = useQuery({
-    queryKey: ['get-roster-favor'],
-    queryFn: () => { return ultimateRequestService.getRosterFavor(0)}
+  const { data: joeData } = useQuery({
+    queryKey: ['get-joe-favor'],
+    queryFn: () => { return ultimateRequestService.getRosterFavor(1)}
   });
 
-  if (data) {
-    console.log('Data:', data);
+  const { data: danData } = useQuery({
+    queryKey: ['get-dan-favor'],
+    queryFn: () => { return ultimateRequestService.getRosterFavor(2)}
+  });
+
+  if (joeData) {
+    console.log('joeData:', joeData);
+  }
+
+  if (danData) {
+    console.log('danData:', danData);
   }
 
   return (

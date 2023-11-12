@@ -24,6 +24,33 @@ const FavorEditMode: FC = () => {
     console.log('danData:', danData);
   }
 
+  if (joeData && danData) {
+    return (
+      <div>
+        <table>
+          <thead>
+            <tr>
+              <td>Fighter</td>
+              <td>Joe Favor</td>
+              <td>Dan Favor</td>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              joeData.roster.map((fighter: any, index: number) => 
+                <tr key={index}>
+                  <td>{fighter.name}</td>
+                  <td>{fighter.favor}</td>
+                  <td>{danData.roster[index].favor}</td>
+                </tr>
+              )
+            }
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
   return (
     <div>Figters Going to be here!</div>
   )

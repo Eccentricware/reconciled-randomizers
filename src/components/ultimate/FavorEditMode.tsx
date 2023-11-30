@@ -1,10 +1,12 @@
 import { UltimateRequestService } from "@/services/request-services/ultimate-request-service";
 import { UseQueryResult, useQuery } from "@tanstack/react-query";
-import React, { FC, useState } from "react";
+import React, { FC, useEffect, useState } from "react";
 
 const FavorEditMode: FC = () => {
   const ultimateRequestService = new UltimateRequestService()
   const [roster, setRoster] = useState<any[] | undefined>(undefined);
+  const [joeRoster, setJoeRoster] = useState<any[] | undefined>(undefined);
+  const [danRoster, setDanRoster] = useState<any[] | undefined>(undefined);
 
   const { data: joeData } = useQuery({
     queryKey: ['get-joe-favor'],
@@ -22,6 +24,36 @@ const FavorEditMode: FC = () => {
 
   if (danData) {
     console.log('danData:', danData);
+  }
+
+  useEffect(() => {
+    if (joeData) {
+      updatePercentages(joeData.roster, 'joe');
+    }
+  }, [joeData]);
+
+  useEffect(() => {
+    if (danData) {
+      updatePercentages(danData.roster, 'dan');
+    }
+  }, [danData]);
+
+  const updatePercentages = (fighters: any[], rosterOwner: string) => {
+    const favorTotal = fighters.reduce((total: number, fighter: any) => {
+      return total + fighter.favor;
+    }, 0);
+
+    console.log('favorTotal:', favorTotal);
+
+    fighters.forEach((fighter: any) => {
+      fighter.percent = fighter.favor / favorTotal * 100;
+    });
+
+    if (rosterOwner === 'joe') {
+      setJoeRoster(fighters);
+    } else {
+      setDanRoster(fighters);
+    }
   }
 
   if (joeData && danData) {

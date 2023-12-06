@@ -1,12 +1,20 @@
 import { UltimateRequestService } from "@/services/request-services/ultimate-request-service";
 import { UseQueryResult, useQuery } from "@tanstack/react-query";
-import React, { FC, useEffect, useState } from "react";
+import React, { CSSProperties, FC, useEffect, useState } from "react";
+
+const attributeStyle: CSSProperties = {
+  textAlign: 'right'
+}
 
 const FavorEditMode: FC = () => {
   const ultimateRequestService = new UltimateRequestService()
   const [roster, setRoster] = useState<any[] | undefined>(undefined);
+  const [remainingFavorJoe, setRemainingFavorJoe] = useState(100000);
+  const [remainingFavorDan, setRemainingFavorDan] = useState(100000);
   const [joeRoster, setJoeRoster] = useState<any[] | undefined>(undefined);
   const [danRoster, setDanRoster] = useState<any[] | undefined>(undefined);
+
+  const rosterFavorLimit = 100000;
 
   const { data: joeData } = useQuery({
     queryKey: ['get-joe-favor'],
@@ -46,34 +54,42 @@ const FavorEditMode: FC = () => {
     console.log('favorTotal:', favorTotal);
 
     fighters.forEach((fighter: any) => {
-      fighter.percent = fighter.favor / favorTotal * 100;
+      fighter.percent = (fighter.favor / favorTotal * 100).toFixed(2);
     });
 
     if (rosterOwner === 'joe') {
       setJoeRoster(fighters);
+      setRemainingFavorJoe(rosterFavorLimit - favorTotal);
     } else {
       setDanRoster(fighters);
+      setRemainingFavorDan(rosterFavorLimit - favorTotal);
     }
   }
 
   if (joeData && danData) {
     return (
       <div>
+        <h4>Joe Favor Remaining: {remainingFavorJoe}</h4>
+        <h4>Dan Favor Remaining: {remainingFavorDan}</h4>
         <table>
           <thead>
             <tr>
               <td>Fighter</td>
-              <td>Joe Favor</td>
-              <td>Dan Favor</td>
+              <td>Joe's Favor</td>
+              <td>Joe %</td>
+              <td>Dan's Favor</td>
+              <td>Dan %</td>
             </tr>
           </thead>
           <tbody>
             {
-              joeData.roster.map((fighter: any, index: number) => 
+              joeData.roster.map((fighter: any, index: number) =>
                 <tr key={index}>
                   <td>{fighter.name}</td>
-                  <td>{fighter.favor}</td>
-                  <td>{danData.roster[index].favor}</td>
+                  <td style={attributeStyle}>{fighter.favor}</td>
+                  <td style={attributeStyle}>{fighter.percent}%</td>
+                  <td style={attributeStyle}>{danData.roster[index].favor}</td>
+                  <td style={attributeStyle}>{danData.roster[index].percent}%</td>
                 </tr>
               )
             }

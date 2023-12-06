@@ -6,6 +6,6 @@ export class PrismaticRequestService extends AbstractRequestService {
   }
 
   async getDeckStandings(league: number): Promise<any> {
-    return this.get(`/prismatic/standings/${league}`);
+    return this.get(`prismatic/standings/${league}`);
   }
 }

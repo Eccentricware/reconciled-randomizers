@@ -26,14 +26,6 @@ const FavorEditMode: FC = () => {
     queryFn: () => { return ultimateRequestService.getRosterFavor(2)}
   });
 
-  if (joeData) {
-    console.log('joeData:', joeData);
-  }
-
-  if (danData) {
-    console.log('danData:', danData);
-  }
-
   useEffect(() => {
     if (joeData) {
       updatePercentages(joeData.roster, 'joe');
@@ -51,8 +43,6 @@ const FavorEditMode: FC = () => {
       return total + fighter.favor;
     }, 0);
 
-    console.log('favorTotal:', favorTotal);
-
     fighters.forEach((fighter: any) => {
       fighter.percent = (fighter.favor / favorTotal * 100).toFixed(2);
     });
@@ -63,6 +53,33 @@ const FavorEditMode: FC = () => {
     } else {
       setDanRoster(fighters);
       setRemainingFavorDan(rosterFavorLimit - favorTotal);
+    }
+  }
+
+  const handleFavorChange = (index: number, rosterOwner: string, value: number) => {
+    if (value < 1) {
+      return;
+    }
+    
+    if (rosterOwner === 'joe' && joeRoster) {
+      const updatedRoster = joeRoster?.slice();
+      let newValue = value - updatedRoster[index].favor > remainingFavorJoe
+        ? updatedRoster[index].favor + remainingFavorJoe
+        : value;
+
+      updatedRoster[index].favor = newValue;
+      setJoeRoster(updatedRoster);
+      updatePercentages(updatedRoster, 'joe');
+
+    } else if (danRoster) {
+      const updatedRoster = danRoster?.slice();
+      let newValue = value - updatedRoster[index].favor > remainingFavorDan
+        ? updatedRoster[index].favor + remainingFavorDan
+        : value;
+
+      updatedRoster[index].favor = value;
+      setDanRoster(updatedRoster);
+      updatePercentages(updatedRoster, 'dan');
     }
   }
 
@@ -86,9 +103,19 @@ const FavorEditMode: FC = () => {
               joeData.roster.map((fighter: any, index: number) =>
                 <tr key={index}>
                   <td>{fighter.name}</td>
-                  <td style={attributeStyle}>{fighter.favor}</td>
+                  <td style={attributeStyle}>
+                    <input type="number"
+                      value={fighter.favor}
+                      onChange={(e) => handleFavorChange(index, 'joe', Number(e.target.value))}
+                    />
+                  </td>
                   <td style={attributeStyle}>{fighter.percent}%</td>
-                  <td style={attributeStyle}>{danData.roster[index].favor}</td>
+                  <td style={attributeStyle}>
+                    <input type="number"
+                      value={danData.roster[index].favor}
+                      onChange={(e) => handleFavorChange(index, 'dan', Number(e.target.value))}
+                    />
+                  </td>
                   <td style={attributeStyle}>{danData.roster[index].percent}%</td>
                 </tr>
               )

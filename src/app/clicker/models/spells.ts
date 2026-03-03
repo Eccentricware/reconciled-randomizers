@@ -30,4 +30,21 @@ export enum ChargeTypes {
   'icelightning3'
 }
 
+export interface FatigueStacks {
+  fire: number;
+  fireTimer: number;
+  ice: number;
+  iceTimer: number;
+  lightning: number;
+  lightningTimer: number;
+}
 
+export interface DarkRitualStacks {
+  stacks: number;
+  timer: number;
+}
+
+export interface EnergonChargeStacks {
+  stacks: number;
+  timer: number;
+}

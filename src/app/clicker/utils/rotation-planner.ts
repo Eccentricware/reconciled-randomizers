@@ -1,4 +1,4 @@
-import { ChargeTypes, ElementTypes, Spell } from "../models/spells";
+import { ChargeTypes, ElementTypes, Spell, FatigueStacks } from "../models/spells";
 
 export const spells: Record<string, Spell> = {
   'cut': {
@@ -412,7 +412,9 @@ export interface RotationState {
   lightningFatigueTimer: number;
   darkRitualStacks: number;
   maxDarkRitualStacks: number;
+  darkRitualTimer: number;
   energonChargeStacks: number;
+  energonTimer: number;
   chargeStacks: Record<ChargeTypes, number>;
   maxChargeStacks: Record<ChargeTypes, number>;
   elapsedTime: number;
@@ -435,11 +437,16 @@ const initialRotationState: RotationState = {
   mana: 300,
   maxMana: 300,
   fireFatigueStacks: 0,
+  fireFatigueTimer: 0,
   iceFatigueStacks: 0,
+  iceFatigueTimer: 0,
   lightningFatigueStacks: 0,
+  lightningFatigueTimer: 0,
   darkRitualStacks: 0,
+  darkRitualTimer: 0,
   maxDarkRitualStacks: 20,
   energonChargeStacks: 0,
+  energonTimer: 0,
   chargeStacks: {
     [ChargeTypes.fireice1]: 0,
     [ChargeTypes.fireice2]: 0,
@@ -468,28 +475,122 @@ const initialRotationState: RotationState = {
   error: false
 }
 
-const getExpectedEnergyCost = (spell: Spell, state: RotationState): number => {
+const getExpectedEnergyCost = (spell: Spell, fatigueStacks: FatigueStacks): number => {
   let expectedEnergyCost = spell.energyCost;
 
   if (spell.element === ElementTypes.fire) {
-    expectedEnergyCost = expectedEnergyCost * (1 + 0.04 * state.fireFatigueStacks);
+    expectedEnergyCost = expectedEnergyCost * (1 + 0.04 * fatigueStacks.fire);
   } else if (spell.element === ElementTypes.ice) {
-    expectedEnergyCost = expectedEnergyCost * (1 + 0.04 * state.iceFatigueStacks);
+    expectedEnergyCost = expectedEnergyCost * (1 + 0.04 * fatigueStacks.ice);
   } else if (spell.element === ElementTypes.lightning) {
-    expectedEnergyCost = expectedEnergyCost * (1 + 0.04 * state.lightningFatigueStacks);
+    expectedEnergyCost = expectedEnergyCost * (1 + 0.04 * fatigueStacks.lightning);
   }
 
   return expectedEnergyCost;
 }
 
-export const createTimeline = (rotation: Spell[]): RotationState[] => {
+const dissipateFatigueStacks = (state: RotationState, spell: Spell): FatigueStacks => {
+  const fatigueStacks: FatigueStacks = {
+    fire: state.fireFatigueStacks,
+    fireTimer: state.fireFatigueTimer,
+    ice: state.iceFatigueStacks,
+    iceTimer: state.iceFatigueTimer,
+    lightning: state.lightningFatigueStacks,
+    lightningTimer: state.lightningFatigueTimer
+  }
+
+  let castTimeRemaning = spell.castDuration;
+  while (castTimeRemaning > 0) {
+    if (fatigueStacks.fire > 0 && castTimeRemaning >= state.fireFatigueTimer) {
+      fatigueStacks.fire -= 1;
+      if (fatigueStacks.fire > 0) {
+        fatigueStacks.fireTimer = 8;
+      }
+
+      castTimeRemaning -= state.fireFatigueTimer;
+    } else {
+      fatigueStacks.fireTimer -= castTimeRemaning;
+      castTimeRemaning = 0;
+    }
+  }
+
+  castTimeRemaning = spell.castDuration;
+  while (castTimeRemaning > 0) {
+    if (fatigueStacks.ice > 0 && castTimeRemaning >= state.iceFatigueTimer) {
+      fatigueStacks.ice -= 1;
+      if (fatigueStacks.ice > 0) {
+        fatigueStacks.iceTimer = 8;
+      }
+
+      castTimeRemaning -= state.iceFatigueTimer;
+    } else {
+      fatigueStacks.iceTimer -= castTimeRemaning;
+      castTimeRemaning = 0;
+    }
+  }
+
+  castTimeRemaning = spell.castDuration;
+  while (castTimeRemaning > 0) {
+    if (fatigueStacks.lightning > 0 && castTimeRemaning >= state.lightningFatigueTimer) {
+      fatigueStacks.lightning -= 1;
+      if (fatigueStacks.lightning > 0) {
+        fatigueStacks.lightningTimer = 8;
+      }
+
+      castTimeRemaning -= state.lightningFatigueTimer;
+    } else {
+      fatigueStacks.lightningTimer -= castTimeRemaning;
+      castTimeRemaning = 0;
+    }
+  }
+
+  return fatigueStacks;
+}
+
+const calculateFatigueStacks = (fatigueStacks: FatigueStacks, spell: Spell): void => {
+  if (spell.element === ElementTypes.fire || spell.secondaryElement === ElementTypes.fire) {
+      fatigueStacks.fire += spell.rank;
+      if (fatigueStacks.fire === 0) {
+        fatigueStacks.fireTimer = 8;
+      }
+    }
+
+    if (spell.element === ElementTypes.ice || spell.secondaryElement === ElementTypes.ice) {
+      fatigueStacks.ice += spell.rank;
+      if (fatigueStacks.ice === 0) {
+        fatigueStacks.iceTimer = 8;
+      }
+    }
+
+    if (spell.element === ElementTypes.lightning || spell.secondaryElement === ElementTypes.lightning) {
+      fatigueStacks.lightning += spell.rank;
+      if (fatigueStacks.lightning === 0) {
+        fatigueStacks.lightningTimer = 8;
+      }
+    }
+}
+
+const getSpellByName = (name: string): Spell => {
+  const spell = spells[name];
+  if (!spell) {
+    throw new Error(`Spell with name ${name} not found`);
+  }
+
+  return spell;
+}
+
+export const createTimeline = (rotation: string[]): RotationState[] => {
   const rotationTimeline: RotationState[] = [initialRotationState];
 
-  rotation.forEach(spell => {
+  rotation.forEach(spellName => {
+    const spell = getSpellByName(spellName);
     const lastState = rotationTimeline[rotationTimeline.length - 1];
     let error = false;
 
-    let expectedEnergy = lastState.energy - getExpectedEnergyCost(spell, lastState) + spell.castDuration;
+    const fatigueStacks = dissipateFatigueStacks(lastState, spell);
+
+    // Energy
+    let expectedEnergy = lastState.energy - getExpectedEnergyCost(spell, fatigueStacks) + spell.castDuration;
     if (expectedEnergy < 0) {
       error = true;
     }
@@ -498,6 +599,10 @@ export const createTimeline = (rotation: Spell[]): RotationState[] => {
       expectedEnergy = lastState.maxEnergy;
     }
 
+    //Fatigue Penalty
+    calculateFatigueStacks(fatigueStacks, spell);
+
+    // Mana
     let expectedMana = lastState.mana - spell.manaCost + spell.castDuration;
     if (expectedMana < 0) {
       error = true;
@@ -514,12 +619,17 @@ export const createTimeline = (rotation: Spell[]): RotationState[] => {
       error: error,
       maxEnergy: 300,
       maxMana: 300,
-      fireFatigueStacks: lastState.fireFatigueStacks,
-      iceFatigueStacks: lastState.iceFatigueStacks,
-      lightningFatigueStacks: lastState.lightningFatigueStacks,
+      fireFatigueStacks: fatigueStacks.fire,
+      fireFatigueTimer: fatigueStacks.fireTimer,
+      iceFatigueStacks: fatigueStacks.ice,
+      iceFatigueTimer: fatigueStacks.iceTimer,
+      lightningFatigueStacks: fatigueStacks.lightning,
+      lightningFatigueTimer: fatigueStacks.lightningTimer,
       darkRitualStacks: 0,
       maxDarkRitualStacks: 0,
+      darkRitualTimer: 0,
       energonChargeStacks: 0,
+      energonTimer: 0,
       elapsedTime: lastState.elapsedTime + spell.castDuration,
       chargeStacks: lastState.chargeStacks,
       maxChargeStacks: lastState.maxChargeStacks

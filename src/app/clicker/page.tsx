@@ -14,7 +14,9 @@ export default function Home() {
   const [dmgTotalMultiplier, setDmgTotalMultiplier] = useState(0);
   const [clkDmgTotalMultiplier, setClkDmgTotalMultiplier] = useState(0);
 
-  const [spells, setSpells] = useState<Spell[]>([]);
+  const [spells, setSpells] = useState<string[]>([
+    'lightning1'
+  ]);
   const [rotation, setRotation] = useState<RotationState[]>(createTimeline(spells));
 
   useEffect(() => {
